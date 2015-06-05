@@ -4,19 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SpaceEngineers
+namespace SpaceEngineersScripts.AdvancedPowerControl
 {
-	public class AdvancedPowerControlWrapper
+	public class AdvancedPowerController
 	{
-		static void Main ()
-		{
-			new AdvancedPowerControl ().Main ();
-		}
-	}
-
-	public class AdvancedPowerControl
-	{
-		IMyGridTerminalSystem GridTerminalSystem = null;
+		internal IMyGridTerminalSystem GridTerminalSystem = null;
 		//------------------------------------------------------
 		//----- Script Begins ----------------------------------
 		//------------------------------------------------------
@@ -24,33 +16,76 @@ namespace SpaceEngineers
        *  Written and tested by     Stiggan and Malakeh in January 2015.
        *  Updated and adapted by Fozz in April 2015
        */
-		string getDetailedInfoValue (IMyTerminalBlock block, string name)
+		internal string getDetailedInfoValue (IMyTerminalBlock block, string name)
 		{
 			string value = "";
 			string[] lines = block.DetailedInfo.Split (new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
 			for (int i = 0; i < lines.Length; i++) {
 				string[] line = lines [i].Split (':');
-				if (line [0].Equals (name)) {
-					value = line [1].Substring (1);
-					break;
+				if (line.Length >= 2) {
+					if (line [0].Trim().Equals (name)) {
+						value = line [1].Trim();
+						break;
+					}
 				}
 			}
 			return value;
 		}
 
-		int getPowerAsInt (string text)
+		internal int getPowerAsInt (string text)
 		{ 
 			if (String.IsNullOrWhiteSpace (text)) { 
 				return 0; 
 			} 
+
 			string[] values = text.Split (' '); 
-			if (values [1].Equals ("kW") || values [1].Equals ("kWh")) { 
-				return (int)(float.Parse (values [0]) * 1000f); 
-			} else if (values [1].Equals ("MW") || values [1].Equals ("MWh")) { 
-				return (int)(float.Parse (values [0]) * 1000000f); 
-			} else { 
-				return (int)float.Parse (values [0]); 
-			} 
+			if (values.Length == 0) {
+				return 0;
+			}
+
+			float val;
+			try {
+			  val = float.Parse(values [0]);
+			}
+			catch (FormatException) {
+				return 0;
+			}
+
+			string unit = values [1];
+
+			float mult = 0;
+			switch (unit.ToLower()) {
+			case "w":
+				mult = 1;
+				break;
+			case "wh":
+				mult = 1;
+				break;
+			case "kw":
+				mult = 1000;
+				break;
+			case "kwh":
+				mult = 1000;
+				break;
+			case "mw":
+				mult = 1000000;
+				break;
+			case "mwh":
+				mult = 1000000;
+				break;
+			default:
+				mult = 0;
+				break;
+			}
+
+			return (int)(val * mult);
+		}
+
+		internal List<IMyTerminalBlock> getBatteries ()
+		{ 
+			List<IMyTerminalBlock> batteries = new List<IMyTerminalBlock> ();   
+			GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock> (batteries); 
+			return batteries;
 		}
 
 		public void Main ()
@@ -120,13 +155,6 @@ namespace SpaceEngineers
 				return true;
 			}
 			return false;
-		}
-
-		List<IMyTerminalBlock> getBatteries ()
-		{ 
-			List<IMyTerminalBlock> batteries = new List<IMyTerminalBlock> ();   
-			GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock> (batteries); 
-			return batteries;
 		}
 
 		List<IMyTerminalBlock> getNonFullBatteries ()

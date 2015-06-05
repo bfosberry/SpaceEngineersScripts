@@ -1,9 +1,35 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Test.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Common/StubTerminalBlock.cs">
     <Files>
-      <File FileName="Test.cs" Line="10" Column="3" />
+      <File FileName="AdvancedPowerControl/AdvancedPowerControl.cs" Line="1" Column="1" />
+      <File FileName="AdvancedPowerControl/AdvancedPowerControlTest.cs" Line="1" Column="1" />
+      <File FileName="Common/StubGridTerminalSystem.cs" Line="1" Column="1" />
+      <File FileName="AdvancedPowerControl/AdvancedPowerControlWrapper.cs" Line="1" Column="1" />
+      <File FileName="Common/StubTerminalBlock.cs" Line="190" Column="41" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True">
+          <Node name="SpaceEngineersScripts" expanded="True">
+            <Node name="References" expanded="True" />
+            <Node name="AdvancedPowerControl" expanded="True" />
+            <Node name="Common" expanded="True">
+              <Node name="StubTerminalBlock.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="ClassPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
+      </Pad>
+      <Pad Id="MonoDevelop.NUnit.TestPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
