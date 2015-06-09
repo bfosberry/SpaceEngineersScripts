@@ -16,6 +16,42 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
        *  Written and tested by     Stiggan and Malakeh in January 2015.
        *  Updated and adapted by Fozz in April 2015
        */
+		DisplayBuffer debugDisplay;
+
+		public void Main ()
+		{
+			List<IMyTerminalBlock> displays = new List<IMyTerminalBlock> (); 
+			GridTerminalSystem.SearchBlocksOfName ("Power Debug LCD Panel", displays); 
+			if (displays.Count > 0) {
+				debugDisplay = new DisplayBuffer (displays [0]);
+			}
+			debugDisplay = new DisplayBuffer (null);
+
+
+			debugDisplay.Writeln ("Starting"); 
+
+			dischargeBatteries ();  
+			int availablePower = availableSolarPower () + availableBatteryPower ();
+			debugDisplay.Writeln (availablePower + " power capacity is available!"); 
+
+			List<IMyTerminalBlock> batteries1 = getHighestBatteries ();      
+			for (int i = 0; i < batteries1.Count && currentReactorDrain () > 0; i++) {  
+				IMyTerminalBlock battery = batteries1 [i];  
+				battery.GetActionWithName ("Recharge").Apply (battery);  
+			} 
+
+			List<IMyTerminalBlock> batteries = getLowestBatteries ();  
+			for (int i = 0; i < batteries.Count && availablePower > 0; i++) {
+				IMyTerminalBlock battery = batteries [i];
+				if (battery != null) {    
+					availablePower -= handleBattery (battery, availablePower);
+				} else {    
+					debugDisplay.Writeln ("No batteries to charge");     
+					return;
+				}          
+			}   
+		}
+
 		internal string getDetailedInfoValue (IMyTerminalBlock block, string name)
 		{
 			string value = "";
@@ -23,8 +59,8 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 			for (int i = 0; i < lines.Length; i++) {
 				string[] line = lines [i].Split (':');
 				if (line.Length >= 2) {
-					if (line [0].Trim().Equals (name)) {
-						value = line [1].Trim();
+					if (line [0].Trim ().Equals (name)) {
+						value = line [1].Trim ();
 						break;
 					}
 				}
@@ -45,16 +81,15 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 
 			float val;
 			try {
-			  val = float.Parse(values [0]);
-			}
-			catch (FormatException) {
+				val = float.Parse (values [0]);
+			} catch (FormatException) {
 				return 0;
 			}
 
 			string unit = values [1];
 
 			float mult = 0;
-			switch (unit.ToLower()) {
+			switch (unit.ToLower ()) {
 			case "w":
 				mult = 1;
 				break;
@@ -88,75 +123,6 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 			return batteries;
 		}
 
-		public void Main ()
-		{
-			writeMessage ("Starting"); 
-			dischargeBatteries ();  
-			int availablePower = availableSolarPower () + availableBatteryPower ();
-			writeMessage (availablePower + " power capacity is available!"); 
-
-			List<IMyTerminalBlock> batteries1 = getHighestBatteries ();      
-			for (int i = 0; i < batteries1.Count && currentReactorDrain () > 0; i++) {  
-				IMyTerminalBlock battery = batteries1 [i];  
-				battery.GetActionWithName ("Recharge").Apply (battery);  
-			} 
-
-			List<IMyTerminalBlock> batteries = getLowestBatteries ();  
-			for (int i = 0; i < batteries.Count && availablePower > 0; i++) {
-				IMyTerminalBlock battery = batteries [i];
-				if (battery != null) {    
-					availablePower -= handleBattery (battery, availablePower);
-				} else {    
-					writeMessage ("No batteries to charge");     
-					return;
-				}          
-			}   
-		}
-
-		int handleBattery (IMyTerminalBlock battery, int availablePower)
-		{
-			int requiredCapacity = chargeRate (battery);     
-			if (getCurrentOutput (battery) > 0) {     
-				requiredCapacity += chargeRate (battery);     
-			}     
-
-			writeMessage ("Checking power capacity");     
-			if (availablePower - requiredCapacity >= 0) {        
-				writeMessage ("Charging another battery");         
-				battery.GetActionWithName ("Recharge").Apply (battery);            
-				return requiredCapacity;      
-			} else {       
-				writeMessage ("Insufficient power capacity to charge another battery:" + availablePower);        
-				return availablePower;   
-			}   
-		}
-
-		void dischargeBatteries ()
-		{
-			List<IMyTerminalBlock> batteries = new List<IMyTerminalBlock> (); 
-			GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock> (batteries); 
-			for (int i = 0; i < batteries.Count; i++) { 
-
-				int storedPower = getPowerAsInt (getDetailedInfoValue (batteries [i], "Stored power"));
-				int maxStoredPower = getPowerAsInt (getDetailedInfoValue (batteries [i], "Max Stored Power"));
-				if (storedPower == maxStoredPower && isRecharging (batteries [i])) {
-					batteries [i].GetActionWithName ("Recharge").Apply (batteries [i]); 
-				} 
-			} 
-		}
-
-		bool dischargeHighestBattery ()
-		{ 
-			writeMessage ("Reactor is draining, trying to discharge a charging battery");
-			List<IMyTerminalBlock> batteries = getHighestBatteries ();
-			if (batteries.Count > 0) {
-				writeMessage ("Switching a Battery to discharge");
-
-				return true;
-			}
-			return false;
-		}
-
 		List<IMyTerminalBlock> getNonFullBatteries ()
 		{
 			return getBatteries ().FindAll (b => !isFull (b)); 
@@ -186,6 +152,50 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 				return p2 - p1;  
 			});  
 			return batteries; 
+		}
+
+		int handleBattery (IMyTerminalBlock battery, int availablePower)
+		{
+			int requiredCapacity = chargeRate (battery);     
+			if (getCurrentOutput (battery) > 0) {     
+				requiredCapacity += chargeRate (battery);     
+			}     
+
+			debugDisplay.Writeln ("Checking power capacity");     
+			if (availablePower - requiredCapacity >= 0) {        
+				debugDisplay.Writeln ("Charging another battery");         
+				battery.GetActionWithName ("Recharge").Apply (battery);            
+				return requiredCapacity;      
+			} else {       
+				debugDisplay.Writeln ("Insufficient power capacity to charge another battery:" + availablePower);        
+				return availablePower;   
+			}   
+		}
+
+		void dischargeBatteries ()
+		{
+			List<IMyTerminalBlock> batteries = new List<IMyTerminalBlock> (); 
+			GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock> (batteries); 
+			for (int i = 0; i < batteries.Count; i++) { 
+
+				int storedPower = getPowerAsInt (getDetailedInfoValue (batteries [i], "Stored power"));
+				int maxStoredPower = getPowerAsInt (getDetailedInfoValue (batteries [i], "Max Stored Power"));
+				if (storedPower == maxStoredPower && isRecharging (batteries [i])) {
+					batteries [i].GetActionWithName ("Recharge").Apply (batteries [i]); 
+				} 
+			} 
+		}
+
+		bool dischargeHighestBattery ()
+		{ 
+			debugDisplay.Writeln ("Reactor is draining, trying to discharge a charging battery");
+			List<IMyTerminalBlock> batteries = getHighestBatteries ();
+			if (batteries.Count > 0) {
+				debugDisplay.Writeln ("Switching a Battery to discharge");
+
+				return true;
+			}
+			return false;
 		}
 
 		int currentReactorDrain ()
@@ -295,18 +305,6 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 		bool detailExist (IMyTerminalBlock block, string name)
 		{ 
 			return !String.IsNullOrEmpty (getDetailedInfoValue (block, name)); 
-		}
-
-		void writeMessage (string message)
-		{ 
-			List<IMyTerminalBlock> work = new List<IMyTerminalBlock> (); 
-			GridTerminalSystem.SearchBlocksOfName ("Power Debug LCD Panel", work); 
-			if (work.Count > 0) {
-				IMyTextPanel panel = (IMyTextPanel)work [0];  
-				panel.WritePublicText (message, false); 
-				panel.ShowTextureOnScreen ();   
-				panel.ShowPublicTextOnScreen ();
-			}
 		}
 		//------------------------------------------------------
 		//----- Script Ends ------------------------------------

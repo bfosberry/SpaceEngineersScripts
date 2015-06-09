@@ -10,6 +10,12 @@ namespace SpaceEngineersScripts.Common
 {
 	public class StubTerminalBlock : IMyTerminalBlock
 	{
+		public string CustomInfo {
+			get {
+				throw new NotImplementedException ();
+			}
+		}
+
 		public bool HasLocalPlayerAccess ()
 		{
 			throw new NotImplementedException ();
