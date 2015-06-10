@@ -20,13 +20,7 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 
 		public void Main ()
 		{
-			List<IMyTerminalBlock> displays = new List<IMyTerminalBlock> (); 
-			GridTerminalSystem.SearchBlocksOfName ("Power Debug LCD Panel", displays); 
-			if (displays.Count > 0) {
-				debugDisplay = new DisplayBuffer (displays [0]);
-			}
-			debugDisplay = new DisplayBuffer (null);
-
+			debugDisplay = NewDebugDisplayBuffer ();
 
 			debugDisplay.Writeln ("Starting"); 
 
@@ -50,6 +44,17 @@ namespace SpaceEngineersScripts.AdvancedPowerControl
 					return;
 				}          
 			}   
+		}
+
+		DisplayBuffer NewDebugDisplayBuffer ()
+		{
+			IMyTerminalBlock panelBlock = null;
+			List<IMyTerminalBlock> displays = new List<IMyTerminalBlock> (); 
+			GridTerminalSystem.SearchBlocksOfName ("Power Debug LCD Panel", displays); 
+			if (displays.Count > 0) {
+				panelBlock = displays [0];
+			}
+			return new DisplayBuffer (panelBlock);
 		}
 
 		internal string getDetailedInfoValue (IMyTerminalBlock block, string name)
